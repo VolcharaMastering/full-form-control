@@ -1,0 +1,34 @@
+{
+    "name": "full-form-control",
+    "version": "0.1.0",
+    "description": "Headless form management for React & Next.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc"
+    },
+    "keywords": [
+        "react",
+        "form",
+        "validation",
+        "typescript",
+        "headless"
+    ],
+    "author": "Aleksey Barabanov",
+    "license": "MIT",
+    "dependencies": {
+        "react": "^19.1.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.7"
+    }
+}
