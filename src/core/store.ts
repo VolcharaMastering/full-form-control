@@ -1,4 +1,3 @@
-
 export class FormStore<T extends Record<string, any>> implements IFormStore<T> {
     public formValues: T;
     public defaultData: T;

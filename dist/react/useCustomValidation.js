@@ -1,23 +1,20 @@
-import { useEffect, useReducer } from "react";
+import { useSyncExternalStore } from "react";
 import { FormStore } from "../core/store";
-// One global store for one form
+// Create a new instance of FormStore with a generic type
 const store = new FormStore();
+// Hook to use form store
 export function useFormStore() {
-    // Counter for forceUpdate
-    const [, forceUpdate] = useReducer((c) => c + 1, 0);
-    useEffect(() => {
-        // Subscribe once
-        const unsubscribe = store.subscribe(() => {
-            forceUpdate();
-        });
-        return unsubscribe;
-    }, []);
-    // Return primitives and reference functions
+    // Subscribe to form values changes and get the current form values
+    const formValues = useSyncExternalStore((cb) => store.subscribe(cb), () => store.getFormValues());
+    // Subscribe to errors changes and get the current errors
+    const errors = useSyncExternalStore((cb) => store.subscribe(cb), () => store.getErrors());
+    // Subscribe to validity changes and get the current validity status
+    const isValid = useSyncExternalStore((cb) => store.subscribe(cb), () => store.isFormValid());
+    // Return the form values, errors, validity status, and methods to set and clear form values
     return {
-        formValues: store.getFormValues(),
-        defaultData: store.getDefaultData(),
-        errors: store.getErrors(),
-        isValid: store.isFormValid(),
+        formValues,
+        errors,
+        isValid,
         setFormValues: store.setFormValues,
         clearFormValues: () => store.clearFormValues(),
     };

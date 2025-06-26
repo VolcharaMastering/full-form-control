@@ -140,5 +140,5 @@ Without this structure, the library will not be able to detect and display error
 
 - [ ] JavaScript support
 - [ ] Built-in validators (basic rules)
-- [ ] Data-editing (prefilled values) module test
+- [x] Data-editing (prefilled values) module test
 - [ ] More real-world examples and tests
