@@ -1,39 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Types for different validation schema kinds
-export type SchemaType = "joi" | "zod" | "yup" | "field" | "valibot" | "superstruct" | "typia" | "ajv" | "vest" | "custom";
-
-export type ValidationConfig<T> =
-  | { type: "joi"; schema: { validate: (data: T) => { error?: unknown } } }
-  | { type: "zod"; schema: { safeParse: (data: T) => { success: boolean; error?: any } } }
-  | { type: "yup"; schema: { validateSync: (data: T, options?: any) => void } }
-  | { type: "valibot" | "superstruct" | "typia" | "ajv" | "vest" | "custom"; schema: { validate: (data: T) => any } }
-  | { type: "field"; schema: ValidationSchema<T> };
-
-export type FieldValidator<Value> = (value: Value) => string | null;
-
-export type ValidationSchema<T> = Partial<{
-  [K in keyof T]: FieldValidator<T[K]>;
-}>;
-
-export interface IFormStore<T> {
-  formValues: T;
-  defaultData: T;
-  errors: Record<string, string>;
-  isValid: boolean;
-
-  setFormValues(data: Partial<T>, validationConfig?: ValidationConfig<T>, process?: "add" | "edit"): void;
-  clearFormValues(): void;
-  unsubscribeFromStore(): void;
-
-  getFormValues(): T;
-  getDefaultData(): T;
-  getErrors(): Record<string, string>;
-  isFormValid(): boolean;
-  subscribe(callback: () => void): () => void;
-  getSubscribersCount(): number;
-}
-
 export class FormStore<T extends Record<string, any>> implements IFormStore<T> {
   public formValues: T;
   public defaultData: T;
