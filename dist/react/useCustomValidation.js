@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { FormStore } from "../core/store";
 // Create a new instance of FormStore with a generic type
 const store = new FormStore();
-// Hook to use form store
+// Custom hook to use form store
 export function useFormStore() {
     // Subscribe to form values changes and get the current form values
     const formValues = useSyncExternalStore((cb) => store.subscribe(cb), () => store.getFormValues());
@@ -17,5 +17,6 @@ export function useFormStore() {
         isValid,
         setFormValues: store.setFormValues,
         clearFormValues: () => store.clearFormValues(),
+        unsubscribeFromStore: () => store.unsubscribeFromStore(),
     };
 }

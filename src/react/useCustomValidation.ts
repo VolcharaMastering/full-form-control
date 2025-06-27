@@ -5,7 +5,7 @@ import { FormStore } from "../core/store";
 // Create a new instance of FormStore with a generic type
 const store = new FormStore<any>();
 
-// Hook to use form store
+// Custom hook to use form store
 export function useFormStore<T extends Record<string, any>>() {
     // Subscribe to form values changes and get the current form values
     const formValues = useSyncExternalStore(
@@ -32,5 +32,6 @@ export function useFormStore<T extends Record<string, any>>() {
         isValid,
         setFormValues: store.setFormValues,
         clearFormValues: () => store.clearFormValues(),
+        unsubscribeFromStore: () => store.unsubscribeFromStore(),
     };
 }

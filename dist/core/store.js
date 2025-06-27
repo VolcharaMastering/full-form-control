@@ -96,8 +96,12 @@ export class FormStore {
         this.defaultData = {};
         this.errors = {};
         this.isValid = false;
-        this.subscribers.clear();
         this.notify();
+    }
+    // ======= Unsubscribe from changes =======
+    unsubscribeFromStore() {
+        this.clearFormValues();
+        this.subscribers.clear();
     }
     // ========== Getters ==========
     getFormValues() {

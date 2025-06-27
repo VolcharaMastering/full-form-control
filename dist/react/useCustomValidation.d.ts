@@ -4,4 +4,5 @@ export declare function useFormStore<T extends Record<string, any>>(): {
     isValid: boolean;
     setFormValues: (data: Partial<any>, schema?: ValidationSchema<any>, process?: "add" | "edit") => void;
     clearFormValues: () => void;
+    unsubscribeFromStore: () => void;
 };

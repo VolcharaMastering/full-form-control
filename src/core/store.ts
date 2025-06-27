@@ -114,8 +114,12 @@ export class FormStore<T extends Record<string, any>> implements IFormStore<T> {
         this.defaultData = {} as T;
         this.errors = {};
         this.isValid = false;
-        this.subscribers.clear();
         this.notify();
+    }
+    // ======= Unsubscribe from changes =======
+    unsubscribeFromStore(): void {
+        this.clearFormValues();
+        this.subscribers.clear();
     }
 
     // ========== Getters ==========

@@ -3,7 +3,6 @@
 **Full-Form-Control** is a lightweight, headless library for form state and validation management in React & Next.js.  
 **⚠️ This library is currently in testing mode**:
 
-- The data-editing module (loading pre-filled form values) is not yet tested.
 - Among standard validation libraries, only **Joi** has been verified.
 - Built-in validation is **not available** and will be implemented last. The main goal is flexible custom validation.
 
@@ -46,11 +45,12 @@ const joiSchema = Joi.object({
 
 function MyForm() {
   const {
-    formValues,     // Current values of form fields
-    errors,         // Validation errors: { fieldName: errorMessage }
-    isValid,        // Boolean: true if form has no validation errors
-    setFormValues,  // Updates values and triggers validation
-    clearFormValues // Clears all form values
+    formValues,             // Current values of form fields
+    errors,                 // Validation errors: { fieldName: errorMessage }
+    isValid,                // Boolean: true if form has no validation errors
+    setFormValues,          // Updates values and triggers validation
+    clearFormValues,        // Clears all form values
+    unsubscribeFromStore    // Clears all form values and unsubscribe from store
   } = useFormStore();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

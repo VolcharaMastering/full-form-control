@@ -12,6 +12,7 @@ export declare class FormStore<T extends Record<string, any>> implements IFormSt
     private notify;
     private _setFormValues;
     clearFormValues(): void;
+    unsubscribeFromStore(): void;
     getFormValues(): T;
     getDefaultData(): T;
     getErrors(): Record<string, string>;
