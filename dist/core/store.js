@@ -1,96 +1,85 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export class FormStore {
     constructor(initialValues) {
-        // If initialValues provided, set formValues and defaultData to initialValues, else empty objects
+        this.errors = {};
+        this.isValid = false;
+        this.subscribers = new Set();
         this.formValues = initialValues ? { ...initialValues } : {};
         this.defaultData = initialValues ? { ...initialValues } : {};
-        this.errors = {};
         this.isValid = Boolean(initialValues);
-        this.subscribers = new Set();
         this.setFormValues = this._setFormValues.bind(this);
     }
-    // ====== Subscribe to changes ======
     subscribe(callback) {
         this.subscribers.add(callback);
-        return () => {
-            this.subscribers.delete(callback);
-        };
+        return () => this.subscribers.delete(callback);
     }
     notify() {
         this.subscribers.forEach((cb) => cb());
     }
-    // ======= Main method: setFormValues =======
-    _setFormValues(data, schema, process = "add") {
-        // If "edit" and formValues is empty, set data as formValues and defaultData
+    _setFormValues(data, validationConfig, process = "add") {
+        // If edit mode and initial state is empty, override form and default data
         if (!Object.keys(this.formValues).length && process === "edit") {
             this.formValues = { ...data };
             this.defaultData = { ...data };
         }
-        // Merge new data with formValues
-        this.formValues = {
-            ...this.formValues,
-            ...data,
-        };
-        // Run validation if schema exists
-        if (schema) {
-            if ("validate" in schema) {
-                try {
-                    const result = schema.validate(this.formValues);
-                    if (result instanceof Promise) {
-                        result.catch((error) => {
-                            this.handleValidationError(error);
-                            this.notify();
-                        });
-                    }
-                    else {
-                        this.handleValidationResult(result);
-                    }
+        // Merge partial data into form state
+        this.formValues = { ...this.formValues, ...data };
+        // Run schema-based validation
+        if (validationConfig) {
+            switch (validationConfig.type) {
+                case "joi": {
+                    const result = validationConfig.schema.validate(this.formValues);
+                    this.handleJoiError(result.error);
+                    break;
                 }
-                catch (error) {
-                    this.handleValidationError(error);
+                case "zod": {
+                    const result = validationConfig.schema.safeParse(this.formValues);
+                    if (!result.success && result.error)
+                        this.handleZodError(result.error);
+                    else
+                        this.errors = {};
+                    break;
                 }
-            }
-            else {
-                // FieldValidator schema
-                Object.keys(data).forEach((key) => {
-                    const fieldKey = key;
-                    const validator = schema[fieldKey];
-                    if (validator) {
-                        const maybeError = validator(this.formValues[fieldKey]);
-                        if (maybeError) {
-                            this.errors[String(fieldKey)] = maybeError;
-                        }
-                        else {
-                            delete this.errors[String(fieldKey)];
+                case "yup": {
+                    try {
+                        validationConfig.schema.validateSync(this.formValues, { abortEarly: false });
+                        this.errors = {};
+                    }
+                    catch (err) {
+                        this.handleYupError(err);
+                    }
+                    break;
+                }
+                case "valibot":
+                case "superstruct":
+                case "typia":
+                case "ajv":
+                case "vest":
+                case "custom": {
+                    const result = validationConfig.schema.validate(this.formValues);
+                    this.handleGenericValidationError(result);
+                    break;
+                }
+                case "field": {
+                    const schema = validationConfig.schema;
+                    for (const key in data) {
+                        const validator = schema[key];
+                        if (validator) {
+                            const error = validator(this.formValues[key]);
+                            if (error)
+                                this.errors[key] = error;
+                            else
+                                delete this.errors[key];
                         }
                     }
-                });
+                    break;
+                }
             }
         }
-        // Compare with defaultData to check for changes
-        const defaultKeys = Object.keys(this.defaultData);
-        let hasChanges = false;
-        if (defaultKeys.length) {
-            hasChanges = !defaultKeys.every((k) => {
-                return this.defaultData[k] === this.formValues[k];
-            });
-            if (Object.keys(this.defaultData).length !== Object.keys(this.formValues).length) {
-                hasChanges = true;
-            }
-        }
-        if (Object.keys(this.errors).length > 0) {
-            this.isValid = false;
-        }
-        else {
-            if (defaultKeys.length > 0) {
-                this.isValid = hasChanges;
-            }
-            else {
-                this.isValid = Object.keys(this.formValues).length > 0;
-            }
-        }
+        // Determine isValid flag
+        this.isValid = Object.keys(this.errors).length === 0;
         this.notify();
     }
-    // ======= Reset all data =======
     clearFormValues() {
         this.formValues = {};
         this.defaultData = {};
@@ -98,12 +87,10 @@ export class FormStore {
         this.isValid = false;
         this.notify();
     }
-    // ======= Unsubscribe from changes =======
     unsubscribeFromStore() {
         this.clearFormValues();
         this.subscribers.clear();
     }
-    // ========== Getters ==========
     getFormValues() {
         return this.formValues;
     }
@@ -119,56 +106,42 @@ export class FormStore {
     getSubscribersCount() {
         return this.subscribers.size;
     }
-    handleValidationError(error) {
-        // Check for "message" field in error
-        if (error && error.message) {
-            if (error.details) {
-                // Joi-style errors
-                this.errors = error.details.reduce((acc, err) => {
-                    if (err.path && err.path.length) {
-                        acc[err.path.join(".")] = err.message;
-                    }
-                    return acc;
-                }, {});
+    handleJoiError(error) {
+        this.errors = {};
+        if (error?.details) {
+            for (const d of error.details) {
+                if (d.path && d.message) {
+                    this.errors[d.path.join(".")] = d.message;
+                }
             }
-            else {
-                // Generic error
-                this.errors = { [error.path || "form"]: error.message };
-            }
-        }
-        else {
-            // No message field
-            this.errors = { form: "Validation failed. Unknown error." };
         }
     }
-    handleValidationResult(result) {
-        // Check for "error" field in result
-        if (result && typeof result === "object" && "error" in result) {
-            const error = result.error;
-            if (error) {
-                if (error.message) {
-                    if (error.details) {
-                        this.errors = error.details.reduce((acc, err) => {
-                            if (err.path && err.path.length) {
-                                acc[err.path.join(".")] = err.message;
-                            }
-                            return acc;
-                        }, {});
-                    }
-                    else {
-                        this.errors = { [error.path || "form"]: error.message };
-                    }
-                }
-                else {
-                    this.errors = { form: "Validation failed. Unknown error." };
-                }
-            }
-            else {
-                this.errors = {};
+    handleZodError(error) {
+        this.errors = {};
+        for (const issue of error.issues) {
+            this.errors[issue.path.join(".")] = issue.message;
+        }
+    }
+    handleYupError(error) {
+        this.errors = {};
+        if (error.inner) {
+            for (const err of error.inner) {
+                this.errors[err.path] = err.message;
             }
         }
-        else {
-            this.errors = {};
+        else if (error.path && error.message) {
+            this.errors[error.path] = error.message;
+        }
+    }
+    handleGenericValidationError(errorMap) {
+        this.errors = {};
+        if (errorMap && typeof errorMap === "object") {
+            for (const key in errorMap) {
+                const err = errorMap[key];
+                if (err?.message) {
+                    this.errors[key] = err.message;
+                }
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ export declare class FormStore<T extends Record<string, any>> implements IFormSt
     errors: Record<string, string>;
     isValid: boolean;
     private subscribers;
-    setFormValues: (data: Partial<T>, schema?: ValidationSchema<T>, process?: "add" | "edit") => void;
+    setFormValues: (data: Partial<T>, schema?: ValidationConfig<T>, process?: "add" | "edit") => void;
     constructor(initialValues?: {
         [K in keyof T]: T[K];
     });
@@ -18,6 +18,8 @@ export declare class FormStore<T extends Record<string, any>> implements IFormSt
     getErrors(): Record<string, string>;
     isFormValid(): boolean;
     getSubscribersCount(): number;
-    private handleValidationError;
-    private handleValidationResult;
+    private handleJoiError;
+    private handleZodError;
+    private handleYupError;
+    private handleGenericValidationError;
 }

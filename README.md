@@ -1,144 +1,140 @@
-# Full-Form-Control
+# full-form-control [![npm version](https://img.shields.io/npm/v/full-form-control)](https://www.npmjs.com/package/full-form-control) [![Downloads](https://img.shields.io/npm/dt/full-form-control)](https://www.npmjs.com/package/full-form-control) [![License: MIT](https://img.shields.io/github/license/VolcharaMastering/full-form-control)](https://github.com/VolcharaMastering/full-form-control/blob/main/LICENSE)  
 
-**Full-Form-Control** is a lightweight, headless library for form state and validation management in React & Next.js.  
-**⚠️ This library is currently in testing mode**:
+`full-form-control` is a React hook library for managing complete form state and validation in one place. It provides an internal form store so you don’t need external state management. You can initialize it with default values and validation rules, then bind inputs as controlled components. The form values and errors are kept in React state and updated via `onChange` handlers – as the React docs note, with controlled components “the input’s value is always driven by the React state”. This package works with React 18+ out of the box and is written in TypeScript for type safety and developer-friendly errors.  
 
-- Among standard validation libraries, only **Joi** has been verified.
-- Built-in validation is **not available** and will be implemented last. The main goal is flexible custom validation.
+## Features  
 
-> ⚠️ TypeScript only for now. JavaScript support is planned.  
-> ⚠️ To work with custom validation, make sure your validation result includes an `errors` object and an overall `message` field.
+- **Comprehensive form state:** Manages all form values (`formValues`) and validation errors (`errors`) internally, with no extra Redux/Zustand/etc. needed.  
+- **Validation-ready:** Supports custom validation and popular schema libraries (e.g. Joi, Zod, Yup) for validating inputs.  
+- **Simple API:** Returns useful properties/methods (`formValues`, `errors`, `isValid`, `setFormValues`, `clearFormValues`, `unsubscribeFromStore`) for easy form handling (see API table below).  
+- **TypeScript support:** Written in TS; forms and schemas can be strongly typed.  
+- **React 18+ compatible:** Safe to use with Concurrent Mode, Suspense, etc. (standard controlled components pattern).  
+- **Lightweight:** Minimal dependencies; no external state or context setup needed.  
 
-## Features
+## Installation  
 
-- **Stateless**: No Redux, MobX, or other external state managers.
-- **Flexible validation**: Supports any schema (Joi, Yup, or custom functions).
-- **Minimal API**: Simple functions for values, validation, and errors.
-- **UI-agnostic**: Works with any component library in React or Next.js.
-
----
-
-## Install
-
+Install via NPM (or Yarn):  
 ```bash
 npm install full-form-control
-```
+```  
 
----
+## API  
 
-## Quick Start
+Using `useFormStore()` (imported from `'full-form-control'`) returns an object with the following properties and methods:
 
-```ts
-import { useFormStore } from 'full-form-control';
-import Joi from 'joi';
+| Property / Method        | Description                                                                             |
+|--------------------------|-----------------------------------------------------------------------------------------|
+| `formValues`             | Current form values (an object keyed by field name)                                     |
+| `errors`                 | Current validation errors (object with same keys; each value is an object with a `message`) |
+| `isValid`                | Boolean; `true` if there are **no** validation errors                                   |
+| `setFormValues`          | Function to update form values. Typically called as `setFormValues(fieldName, value)`. |
+| `clearFormValues`        | Function to reset/clear all form values back to initial (or empty) state.              |
+| `unsubscribeFromStore`   | Function to unsubscribe any internal listeners (call if needed on unmount).            |
 
-// 1. Define a Joi schema for validation
-const joiSchema = Joi.object({
-  email: Joi.string()
-    .email({ tlds: false })      // Validate email format
-    .required(),                 // Required field
+> **Example:** In your component, call `const form = useFormStore({ /* options */ })`. Then access `form.formValues`, `form.errors`, etc. You might use `const { formValues, setFormValues, errors, isValid } = form;` to work with them directly.  
 
-  password: Joi.string()
-    .min(6)                      // Minimum length of 6
-    .required(),                 // Required field
-});
+You can try on this npm on Playcode: [testForm for full-form-control](https://playcode.io/2442479)
 
-function MyForm() {
-  const {
-    formValues,             // Current values of form fields
-    errors,                 // Validation errors: { fieldName: errorMessage }
-    isValid,                // Boolean: true if form has no validation errors
-    setFormValues,          // Updates values and triggers validation
-    clearFormValues,        // Clears all form values
-    unsubscribeFromStore    // Clears all form values and unsubscribe from store
-  } = useFormStore();
+## Quick Start  
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Update form value and validate using Joi schema
-    setFormValues(
-      { [e.target.name]: e.target.value },
-      joiSchema
-    );
+Use the `useFormStore` hook to manage your form. For example:  
+```jsx
+import { useFormStore } from "full-form-control";
+
+function SignupForm() {
+  const { formValues, setFormValues, errors, isValid } = useFormStore({
+    initialValues: { username: "", email: "" },
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues(name, value);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
   };
 
   return (
-    <form>
-      {/* Email input */}
-      <input
-        name="email"
-        type="email"
-        value={formValues.email || ''}
-        onChange={handleChange}
-        placeholder="Email"
-      />
-      {errors.email && <span>{errors.email}</span>}
-
-      {/* Password input */}
-      <input
-        name="password"
-        type="password"
-        value={formValues.password || ''}
-        onChange={handleChange}
-        placeholder="Password"
-      />
-      {errors.password && <span>{errors.password}</span>}
-
-      {/* Form actions */}
-      <button type="submit" disabled={!isValid}>
-        Submit
-      </button>
-      <button type="button" onClick={clearFormValues}>
-        Reset
-      </button>
+    <form onSubmit={handleSubmit}>
+      <input name="username" value={formValues.username || ""} onChange={handleChange} />
+      <input name="email" value={formValues.email || ""} onChange={handleChange} />
+      {errors.username && <span>{errors.username.message}</span>}
+      {errors.email && <span>{errors.email.message}</span>}
     </form>
   );
 }
 ```
 
----
+### Examples: Validation Schemas  
 
-## Custom Validation
+You can plug in validation schemas from libraries like Joi, Zod, or Yup. Each example below shows defining a schema; you would then pass it into `useFormStore`.
 
-If you use your own validation function (instead of Joi/Yup/Zod), make sure it returns the following shape:
+<details><summary><strong>Joi</strong></summary>
 
-```ts
-{
-  errors: {
-    fieldName: "Error message",
-    // other fields ...
-  },
-  message: "Validation failed"
-}
+```js
+const Joi = require("joi");
+
+const schema = Joi.object({
+  username: Joi.string().alphanum().min(3).required(),
+  password: Joi.string().min(6).required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required()
+});
 ```
+</details>
 
-Without this structure, the library will not be able to detect and display errors properly.
+<details><summary><strong>Zod</strong></summary>
 
----
+```js
+import { z } from "zod";
 
-## API
+const schema = z.object({
+  username: z.string().min(3, "Must be 3+ chars"),
+  age: z.number().int().nonnegative().optional(),
+  email: z.string().email()
+});
+```
+</details>
 
-| Function / Property         | Description                                                  |
-|----------------------------|--------------------------------------------------------------|
-| `formValues`               | Current values of the form fields                            |
-| `errors`                   | Object containing validation messages per field              |
-| `isValid`                  | `true` if there are no validation errors                     |
-| `setFormValues(data, schema?, process?)` | Updates field values, optionally validates |
-| `clearFormValues()`        | Resets all form values and errors                            |
+<details><summary><strong>Yup</strong></summary>
 
----
+```js
+import * as Yup from "yup";
 
-## Why Full-Form-Control?
+const schema = Yup.object().shape({
+  username: Yup.string().min(3, "Too short").required("Required"),
+  email: Yup.string().email("Invalid email").required("Required")
+});
+```
+</details>
 
-- ✅ UI-agnostic: Logic-only, no styling or rendering
-- ✅ Supports both sync and async validation
-- ✅ Works with Joi, Yup, or fully custom validators
-- ✅ Designed for scalability and extensibility
+<details><summary><strong>Custom Validator</strong></summary>
 
----
+```js
+const customValidator = (values) => {
+  const errors = {};
+  if (values.username && values.username.length < 3) {
+    errors.username = { message: "Too short" };
+  }
+  if (values.email && !values.email.includes("@")) {
+    errors.email = { message: "Invalid email" };
+  }
+  return errors;
+};
+```
+</details>
 
-## TODO
+## Custom Validation Schema Structure  
 
-- [ ] JavaScript support
-- [ ] Built-in validators (basic rules)
-- [x] Data-editing (prefilled values) module test
-- [ ] More real-world examples and tests
+When writing your own validation logic or adapter, make sure the result is an “errors” object keyed by form fields. Each entry should be an object with a `message` string, e.g.: `{ email: { message: "Invalid email" } }`. Keeping this structure ensures that errors for each field can be accessed and displayed easily.
+
+## Changelog & Links  
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes and version history.  
+GitHub: [VolcharaMastering/full-form-control](https://github.com/VolcharaMastering/full-form-control)
+
+## TODO  
+
+- Add validation library support: **valibot**, **superstruct**, **typia**, **ajv**, **vest**.  
+- Add built-in HTML validation support  
+- Add JS (non-TS) support
