@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2025-06-28
+### Fixed
+- Improved dependency error handling.
+- React added to peerDependencies.
+
+### Changed
+- Removed React from dependencies and added it to peerDependencies.
+
 ## [0.1.4] - 2025-06-28
 ### Fixed
 - Improved compatibility with Zod and Yup validation schemas.
