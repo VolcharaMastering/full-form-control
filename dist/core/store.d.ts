@@ -1,25 +1,38 @@
-export declare class FormStore<T extends Record<string, any>> implements IFormStore<T> {
+import type { FormSnapshot, IFormStore, ValidationConfig } from "./types";
+export type { FieldValidationSchema, FieldValidator, FormSnapshot, GenericValidationResult, IFormStore, ValidationConfig, } from "./types";
+export declare class FormStore<T extends Record<string, unknown>> implements IFormStore<T> {
     formValues: T;
     defaultData: T;
     errors: Record<string, string>;
     isValid: boolean;
     private subscribers;
+    private cachedSnapshot;
     setFormValues: (data: Partial<T>, schema?: ValidationConfig<T>, process?: "add" | "edit") => void;
-    constructor(initialValues?: {
-        [K in keyof T]: T[K];
-    });
+    constructor(initialValues?: T);
     subscribe(callback: () => void): () => void;
+    private buildSnapshot;
     private notify;
+    private computeIsValid;
     private _setFormValues;
+    private runValidation;
+    private applyJoi;
+    private applyZod;
+    private applyYup;
+    private applyGeneric;
+    private applyField;
     clearFormValues(): void;
+    destroy(): void;
+    /** @deprecated Use destroy() instead. */
     unsubscribeFromStore(): void;
     getFormValues(): T;
     getDefaultData(): T;
     getErrors(): Record<string, string>;
     isFormValid(): boolean;
+    getSnapshot(): FormSnapshot<T>;
     getSubscribersCount(): number;
     private handleJoiError;
     private handleZodError;
     private handleYupError;
     private handleGenericValidationError;
 }
+export declare const createFormStore: <T extends Record<string, unknown>>(initialValues?: T) => FormStore<T>;
