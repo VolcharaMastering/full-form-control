@@ -1,8 +1,11 @@
-export declare function useFormStore<T extends Record<string, any>>(): {
-    formValues: any;
+import { FormStore } from "../core/store";
+export declare const useFormStore: <T extends Record<string, unknown>>(store: FormStore<T>) => {
+    formValues: T;
     errors: Record<string, string>;
     isValid: boolean;
-    setFormValues: (data: Partial<any>, schema?: ValidationConfig<any> | undefined, process?: "add" | "edit") => void;
+    setFormValues: (data: Partial<T>, schema?: import("../core/types").ValidationConfig<T> | undefined, process?: "add" | "edit") => void;
     clearFormValues: () => void;
+    destroy: () => void;
+    /** @deprecated Use destroy() instead. */
     unsubscribeFromStore: () => void;
 };
