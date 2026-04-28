@@ -7,12 +7,14 @@ export declare class FormStore<T extends Record<string, unknown>> implements IFo
     isValid: boolean;
     private subscribers;
     private cachedSnapshot;
+    private isEditMode;
     setFormValues: (data: Partial<T>, schema?: ValidationConfig<T>, process?: "add" | "edit") => void;
     constructor(initialValues?: T);
     subscribe(callback: () => void): () => void;
     private buildSnapshot;
     private notify;
     private computeIsValid;
+    private hasChangesComparedToDefault;
     private _setFormValues;
     private runValidation;
     private applyJoi;

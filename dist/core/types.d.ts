@@ -14,7 +14,7 @@ export type JoiValidationResult = {
     };
 };
 export type ZodIssue = {
-    path: Array<string | number>;
+    path: PropertyKey[];
     message: string;
 };
 export type ZodValidationError = {

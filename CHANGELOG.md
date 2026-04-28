@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+-   **Behavior:** in "edit" mode (`setFormValues(..., ..., "edit")`) `isValid` stays `false` until at least one field value changes compared to `defaultData`.
+-   **Types:** updated the Zod shape for v4. `issue.path` is now treated as `PropertyKey[]` (can include `symbol`).
+
 ## [0.3.0] - 2026-04-24
 
 ### Added

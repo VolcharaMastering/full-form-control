@@ -1,16 +1,31 @@
 # full-form-control [![npm version](https://img.shields.io/npm/v/full-form-control)](https://www.npmjs.com/package/full-form-control) [![Downloads](https://img.shields.io/npm/dt/full-form-control)](https://www.npmjs.com/package/full-form-control) [![License: MIT](https://img.shields.io/github/license/VolcharaMastering/full-form-control)](https://github.com/VolcharaMastering/full-form-control/blob/main/LICENSE)
 
-`full-form-control` is a lightweight, headless form state manager for React and Next.js. You create one small store per form, bind inputs to it, and get `formValues`, `errors` and a single `isValid` flag out of the box. Validation is pluggable: Joi, Zod, Yup, Valibot, Superstruct, Typia, Ajv, Vest, a custom validator, or a map of per-field validators.
+`full-form-control` is a lightweight, headless form state manager for React and Next.js. You create one small store per form, bind inputs to it, and get `formValues`, `errors` and a single `isValid` flag out of the box. Validation is pluggable: Joi, Zod, Yup, ~~Valibot~~ (not released yet), ~~Superstruct~~ (not released yet), ~~Typia~~ (not released yet), ~~Ajv~~ (not released yet), ~~Vest~~ (not released yet), a custom validator, or a map of per-field validators.
 
 Written in TypeScript. Works on React 18+. Supports SSR and React Server Components.
 
-Note: This package is under active development until v1.0.0. SSR and multi-form support were added and passed initial tests, but there is no 100% guarantee that everything works in all cases. Please check the changelog for details.
+You can use **plain JavaScript** without TypeScript: install the package, use ESM `import`, and write React or Next.js components as `.js` / `.jsx`. Runtime code is published as JavaScript (`dist/*.js`); `.d.ts` types are optional and only help editors and TypeScript consumers.
+
+## Modes: "add" and "edit"
+
+The third argument of `setFormValues` is `"add" | "edit"` and defaults to `"add"`.
+
+- `"add"`: merges `partial` into the current values. Use for new records and normal typing.
+- `"edit"`: merges the same way; on the first `"edit"` call when the store has no data (or `defaultData` is empty), the payload becomes both current values and **`defaultData`** (baseline for edits). Use when pre-filling a form from an existing record and you want `getDefaultData()` to match the original.
+
+In `"edit"` mode, `isValid` stays `false` until at least one field value changes compared to `defaultData`, so unchanged data does not count as ready to submit.
+
+```ts
+setFormValues(existingUser, undefined, "edit");
+```
+
+Development note: until v1.0.0 this package is still evolving. SSR and multi-form flows were tested initially but are not guaranteed for every edge case; see the changelog. Zod v4 is supported (`issue.path` uses `PropertyKey[]`).
 
 ## Features
 
 - Per-form store via `createFormStore<T>()`. No global singleton, no React Context, no provider tree.
 - Direct subscription with `useSyncExternalStore`. One subscription per component, one re-render per update.
-- Built-in integrations for Joi, Zod, Yup plus a generic adapter for Valibot, Superstruct, Typia, Ajv, Vest and custom schemas, plus a per-field validator map.
+- Built-in integrations for Joi, Zod, Yup plus a generic adapter for ~~Valibot~~ (not released yet), ~~Superstruct~~ (not released yet), ~~Typia~~ (not released yet), ~~Ajv~~ (not released yet), ~~Vest~~ (not released yet) and custom schemas, plus a per-field validator map.
 - SSR- and RSC-safe: stable `getServerSnapshot` prevents hydration warnings.
 - Fully typed public API: `FormStore<T>`, `createFormStore<T>`, `useFormStore<T>`, `FormSnapshot<T>`, `IFormStore<T>`, `ValidationConfig<T>`.
 - No runtime dependencies beyond React as a peer.
@@ -103,15 +118,15 @@ React hook. Subscribes to a `FormStore<T>` with a single `useSyncExternalStore` 
 
 Return shape:
 
-| Property / Method      | Type                                                                                     | Description                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `formValues`           | `T`                                                                                      | Current form values, keyed by field name.                                                           |
-| `errors`               | `Record<string, string>`                                                                 | Field path to error message. Empty object when the form is valid.                                   |
-| `isValid`              | `boolean`                                                                                | `true` only when `errors` is empty and the form has at least one key in `formValues`.               |
-| `setFormValues`        | `(partial: Partial<T>, config?: ValidationConfig<T>, process?: "add" \| "edit") => void` | Merges `partial` into the store, runs validation if `config` is provided, and notifies subscribers. |
-| `clearFormValues`      | `() => void`                                                                             | Resets values, defaults and errors. Keeps subscribers.                                              |
-| `destroy`              | `() => void`                                                                             | Clears data and removes every subscriber. Use on unmount or route change.                           |
-| `unsubscribeFromStore` | `() => void`                                                                             | Deprecated alias of `destroy`.                                                                      |
+| Property / Method      | Type                                                                                     | Description                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `formValues`           | `T`                                                                                      | Current form values, keyed by field name.                                                                                                                              |
+| `errors`               | `Record<string, string>`                                                                 | Field path to error message. Empty object when the form is valid.                                                                                                      |
+| `isValid`              | `boolean`                                                                                | In `"add"` mode: `true` when `errors` is empty and `formValues` has at least one key. In `"edit"` mode: also requires a change versus `defaultData` (see Modes above). |
+| `setFormValues`        | `(partial: Partial<T>, config?: ValidationConfig<T>, process?: "add" \| "edit") => void` | Merges `partial` into the store, runs validation if `config` is provided, and notifies subscribers.                                                                    |
+| `clearFormValues`      | `() => void`                                                                             | Resets values, defaults and errors. Keeps subscribers.                                                                                                                 |
+| `destroy`              | `() => void`                                                                             | Clears data and removes every subscriber. Use on unmount or route change.                                                                                              |
+| `unsubscribeFromStore` | `() => void`                                                                             | Deprecated alias of `destroy`.                                                                                                                                         |
 
 ### `FormStore<T>` (low-level class)
 
@@ -151,9 +166,7 @@ type ValidationConfig<T> =
     | {
           type: "zod";
           schema: {
-              safeParse(
-                  data: T
-              ):
+              safeParse(data: T):
                   | { success: true }
                   | {
                         success: false;
@@ -233,7 +246,7 @@ setFormValues(
 
 Only fields present in the first argument are re-validated on this call.
 
-### Custom / Valibot / Superstruct / Typia / Ajv / Vest
+### Custom / ~~Valibot~~ (not released yet) / ~~Superstruct~~ (not released yet) / ~~Typia~~ (not released yet) / ~~Ajv~~ (not released yet) / ~~Vest~~ (not released yet)
 
 All of these use one shared shape. Provide a schema object with a `validate(data)` method that returns `Record<string, { message: string }>`:
 
@@ -252,17 +265,6 @@ setFormValues({ email: "foo" }, { type: "custom", schema: customSchema });
 ```
 
 The store extracts `.message` from each entry, so `errors` ends up as `Record<string, string>` for the UI.
-
-## Modes: "add" and "edit"
-
-The third argument of `setFormValues` is `"add" | "edit"` and defaults to `"add"`.
-
-- `"add"` merges `partial` into the current values. Use when creating a new record.
-- `"edit"` does the same merge, and on the very first call (when the store is still empty) it also copies the payload into `defaultData`. Use when pre-filling a form for editing and you want `getDefaultData()` to reflect the original record.
-
-```ts
-setFormValues(existingUser, undefined, "edit");
-```
 
 ## Next.js and SSR
 
