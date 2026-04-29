@@ -21,7 +21,7 @@ export type JoiValidationResult = {
 };
 
 // Narrow shape of a Zod issue and safeParse result.
-export type ZodIssue = { path: Array<string | number>; message: string };
+export type ZodIssue = { path: PropertyKey[]; message: string };
 export type ZodValidationError = { issues: ZodIssue[] };
 export type ZodValidationResult =
   | { success: true }

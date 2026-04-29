@@ -30,6 +30,7 @@ export class FormStore<T extends Record<string, unknown>>
 
   private subscribers: Set<() => void> = new Set();
   private cachedSnapshot: FormSnapshot<T>;
+  private isEditMode: boolean = false;
 
   public setFormValues: (
     data: Partial<T>,
@@ -70,10 +71,40 @@ export class FormStore<T extends Record<string, unknown>>
   // An empty form is treated as "not ready to submit", which is safer for
   // disabling submit buttons by default.
   private computeIsValid(): boolean {
+    const hasData = Object.keys(this.formValues).length > 0;
+    if (!hasData) return false;
+
+    const hasNoErrors = Object.keys(this.errors).length === 0;
+    if (!hasNoErrors) return false;
+
+    if (this.isEditMode) {
+      return this.hasChangesComparedToDefault();
+    }
+
     return (
       Object.keys(this.errors).length === 0 &&
       Object.keys(this.formValues).length > 0
     );
+  }
+
+  private hasChangesComparedToDefault(): boolean {
+    const currentKeys = Object.keys(this.formValues) as Array<
+      Extract<keyof T, string>
+    >;
+    const defaultKeys = Object.keys(this.defaultData) as Array<
+      Extract<keyof T, string>
+    >;
+
+    const allKeys = new Set<Extract<keyof T, string>>([
+      ...currentKeys,
+      ...defaultKeys,
+    ]);
+
+    for (const key of allKeys) {
+      if (!Object.is(this.formValues[key], this.defaultData[key])) return true;
+    }
+
+    return false;
   }
 
   private _setFormValues(
@@ -81,9 +112,17 @@ export class FormStore<T extends Record<string, unknown>>
     validationConfig?: ValidationConfig<T>,
     process: "add" | "edit" = "add"
   ): void {
+    if (process === "edit") {
+      this.isEditMode = true;
+    }
+
     // In edit mode with empty initial state, treat the first payload as the
     // baseline data for the form.
-    if (!Object.keys(this.formValues).length && process === "edit") {
+    if (
+      process === "edit" &&
+      (!Object.keys(this.formValues).length ||
+        !Object.keys(this.defaultData).length)
+    ) {
       this.formValues = { ...(data as T) };
       this.defaultData = { ...(data as T) };
     }
@@ -176,6 +215,7 @@ export class FormStore<T extends Record<string, unknown>>
     this.formValues = {} as T;
     this.defaultData = {} as T;
     this.errors = {};
+    this.isEditMode = false;
     this.isValid = this.computeIsValid();
     this.notify();
   }
@@ -234,7 +274,8 @@ export class FormStore<T extends Record<string, unknown>>
   private handleZodError(error: ZodValidationError): void {
     this.errors = {};
     for (const issue of error.issues) {
-      this.errors[issue.path.join(".")] = issue.message;
+      const pathKey = issue.path.map((part) => String(part)).join(".");
+      this.errors[pathKey] = issue.message;
     }
   }
 

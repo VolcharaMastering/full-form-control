@@ -3,6 +3,7 @@ export class FormStore {
         this.errors = {};
         this.isValid = false;
         this.subscribers = new Set();
+        this.isEditMode = false;
         this.formValues = initialValues ? { ...initialValues } : {};
         this.defaultData = initialValues ? { ...initialValues } : {};
         this.isValid = this.computeIsValid();
@@ -31,13 +32,40 @@ export class FormStore {
     // An empty form is treated as "not ready to submit", which is safer for
     // disabling submit buttons by default.
     computeIsValid() {
+        const hasData = Object.keys(this.formValues).length > 0;
+        if (!hasData)
+            return false;
+        const hasNoErrors = Object.keys(this.errors).length === 0;
+        if (!hasNoErrors)
+            return false;
+        if (this.isEditMode) {
+            return this.hasChangesComparedToDefault();
+        }
         return (Object.keys(this.errors).length === 0 &&
             Object.keys(this.formValues).length > 0);
     }
+    hasChangesComparedToDefault() {
+        const currentKeys = Object.keys(this.formValues);
+        const defaultKeys = Object.keys(this.defaultData);
+        const allKeys = new Set([
+            ...currentKeys,
+            ...defaultKeys,
+        ]);
+        for (const key of allKeys) {
+            if (!Object.is(this.formValues[key], this.defaultData[key]))
+                return true;
+        }
+        return false;
+    }
     _setFormValues(data, validationConfig, process = "add") {
+        if (process === "edit") {
+            this.isEditMode = true;
+        }
         // In edit mode with empty initial state, treat the first payload as the
         // baseline data for the form.
-        if (!Object.keys(this.formValues).length && process === "edit") {
+        if (process === "edit" &&
+            (!Object.keys(this.formValues).length ||
+                !Object.keys(this.defaultData).length)) {
             this.formValues = { ...data };
             this.defaultData = { ...data };
         }
@@ -112,6 +140,7 @@ export class FormStore {
         this.formValues = {};
         this.defaultData = {};
         this.errors = {};
+        this.isEditMode = false;
         this.isValid = this.computeIsValid();
         this.notify();
     }
@@ -161,7 +190,8 @@ export class FormStore {
     handleZodError(error) {
         this.errors = {};
         for (const issue of error.issues) {
-            this.errors[issue.path.join(".")] = issue.message;
+            const pathKey = issue.path.map((part) => String(part)).join(".");
+            this.errors[pathKey] = issue.message;
         }
     }
     handleYupError(error) {
