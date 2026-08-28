@@ -1,6 +1,12 @@
 node_modules
-.dist
+dist
 .env
 
 # typescript
 *.tsbuildinfo
+
+# npm pack output
+*.tgz
+
+# additional documentation
+additionalFiles

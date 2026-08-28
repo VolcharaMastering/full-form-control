@@ -1,20 +1,29 @@
 {
     "name": "full-form-control",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Headless form management for React & Next.js",
-    "main": "dist/index.js",
+    "type": "module",
     "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
         }
     },
     "files": [
-        "dist"
+        "dist",
+        "src"
     ],
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "prepublishOnly": "npm run build",
+        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.jscheck.json",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.{ts,tsx,js}\"",
+        "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.{ts,tsx,js}\"",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
     },
     "keywords": [
         "react",
@@ -25,10 +34,39 @@
     ],
     "author": "Aleksey Barabanov",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/VolcharaMastering/full-form-control.git"
+    },
+    "homepage": "https://github.com/VolcharaMastering/full-form-control#readme",
+    "bugs": {
+        "url": "https://github.com/VolcharaMastering/full-form-control/issues"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "sideEffects": false,
     "peerDependencies": {
         "react": ">=18.0.0"
     },
     "devDependencies": {
-        "@types/react": "^18.2.0"
+        "@eslint/js": "^10.0.1",
+        "@testing-library/jest-dom": "^7.0.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.6",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^26.3.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.3.7",
+        "eslint": "^10.9.1",
+        "eslint-config-prettier": "^10.1.8",
+        "jest": "^30.4.2",
+        "jest-environment-jsdom": "^30.4.1",
+        "prettier": "^3.9.6",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "ts-jest": "^29.4.12",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.68.0"
     }
 }
