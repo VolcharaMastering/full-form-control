@@ -1,6 +1,6 @@
 {
     "name": "full-form-control",
-    "version": "0.3.1",
+    "version": "0.4.1",
     "description": "Headless form management for React & Next.js",
     "type": "module",
     "types": "dist/index.d.ts",
