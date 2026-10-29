@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-10-28
+
+### Added
+
+- Added `displayErrors` for errors on fields marked touched with `markFieldTouched(fieldPath, config?)`. The action can validate an untouched empty field on blur. The existing `errors` object still contains all validation errors, and `isValid` still uses all of them.
+- Added `getDisplayErrors()` and touched-field data in snapshots from `FormStore`. `clearFormValues()` resets touched fields.
+- Added `ITouchedFormStore<T>` and `TouchedFormStoreState<T>`. Existing custom `IFormStore<T>` implementations remain supported without new required methods.
+
+### Fixed
+
+- A validation schema exception now sets `isValid` to `false`, updates the snapshot, notifies subscribers, and rethrows the original error.
+
+### Changed
+
+- The README's main form example uses `displayErrors` for field messages. Existing code reading `errors` keeps its earlier behavior.
+
 ## [0.4.1] - 2026-09-09
 
 ### Added

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 
 import { createFormStore, type FormStore } from "../core/store.js";
-import { useFormStoreState, type FormStoreState } from "./useFormStoreState.js";
+import { useFormStoreState, type TouchedFormStoreState } from "./useFormStoreState.js";
 
 // Hook for a single standalone form.
 // Creates and owns its own FormStore internally, so there is no separate
@@ -12,7 +12,7 @@ import { useFormStoreState, type FormStoreState } from "./useFormStoreState.js";
 // components, create a store with createFormStore and use useFormStore instead.
 export const useForm = <T extends Record<string, unknown>>(
     initialValues?: T
-): FormStoreState<T> => {
+): TouchedFormStoreState<T> => {
     // Lazy init keeps the same store instance for the component lifetime.
     // initialValues only applies on the first render that creates the store.
     const storeRef = useRef<FormStore<T> | null>(null);

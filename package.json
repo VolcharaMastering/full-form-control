@@ -1,6 +1,6 @@
 {
     "name": "full-form-control",
-    "version": "0.4.1",
+    "version": "0.5.0",
     "description": "Headless form management for React & Next.js",
     "type": "module",
     "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
     },
     "files": [
         "dist",
-        "src"
+        "src",
+        "CHANGELOG.md"
     ],
     "scripts": {
         "build": "tsc",

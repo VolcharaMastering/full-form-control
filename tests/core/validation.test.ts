@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { createFormStore } from "../../src/index.js";
 
 type SignupForm = { username: string; email: string };
@@ -141,6 +141,8 @@ describe("Yup validation", () => {
         expect(() =>
             store.setFormValues({ username: "john" }, { type: "yup", schema: brokenSchema })
         ).toThrow(TypeError);
+        expect(store.isFormValid()).toBe(false);
+        expect(store.getSnapshot().isValid).toBe(false);
     });
 });
 
@@ -169,6 +171,37 @@ describe("Custom / generic validation", () => {
         store.setFormValues({ email: "foo@example.com" }, { type: "custom", schema: customSchema });
 
         expect(store.getErrors()).toEqual({});
+    });
+
+    it("marks the form invalid and notifies once when a schema throws", () => {
+        const store = createFormStore<SignupForm>({ username: "", email: "" });
+        const workingSchema = { validate: () => ({}) };
+        store.setFormValues({ username: "ann" }, { type: "custom", schema: workingSchema });
+        const previousSnapshot = store.getSnapshot();
+        const listener = jest.fn();
+        store.subscribe(listener);
+
+        const schemaError = new Error("schema bug");
+        const brokenSchema = {
+            validate: () => {
+                throw schemaError;
+            },
+        };
+        expect(() =>
+            store.setFormValues(
+                { email: "ann@example.com" },
+                { type: "custom", schema: brokenSchema }
+            )
+        ).toThrow(schemaError);
+
+        expect(store.getFormValues().email).toBe("ann@example.com");
+        expect(store.isFormValid()).toBe(false);
+        expect(store.getSnapshot()).not.toBe(previousSnapshot);
+        expect(store.getSnapshot().isValid).toBe(false);
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        store.setFormValues({ username: "bob" });
+        expect(store.isFormValid()).toBe(true);
     });
 });
 

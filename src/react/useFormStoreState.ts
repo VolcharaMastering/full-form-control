@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import type { FormSnapshot, IFormStore } from "../core/types.js";
+import type { FormSnapshot, IFormStore, ITouchedFormStore } from "../core/types.js";
 
 // Snapshot plus stable action methods returned to components.
 // Shared return shape for useFormStore (multi-form) and useForm (standalone).
@@ -14,15 +14,26 @@ export type FormStoreState<T extends Record<string, unknown>> = FormSnapshot<T> 
     unsubscribeFromStore: IFormStore<T>["unsubscribeFromStore"];
 };
 
+export type TouchedFormStoreState<T extends Record<string, unknown>> = FormStoreState<T> & {
+    displayErrors: Record<string, string>;
+    markFieldTouched: ITouchedFormStore<T>["markFieldTouched"];
+};
+
 // Shared subscription logic for any store implementing IFormStore, not just
 // instances created by createFormStore, so a hand-rolled or test-double store
 // works here too, as long as it satisfies the interface.
 // Both public hooks call this internally, so the useSyncExternalStore setup
 // and the returned action methods stay identical between them.
-export const useFormStoreState = <T extends Record<string, unknown>>(
+export function useFormStoreState<T extends Record<string, unknown>>(
+    store: ITouchedFormStore<T>
+): TouchedFormStoreState<T>;
+export function useFormStoreState<T extends Record<string, unknown>>(
     store: IFormStore<T>
-): FormStoreState<T> => {
-    // One subscription to a single snapshot { formValues, errors, isValid }.
+): FormStoreState<T>;
+export function useFormStoreState<T extends Record<string, unknown>>(
+    store: IFormStore<T>
+): FormStoreState<T> {
+    // One subscription to a single form snapshot.
     // The store caches this object and replaces it on every state change,
     // so notify() triggers at most one re-render per component.
     // store.subscribe and store.getSnapshot are stable arrow properties on
@@ -35,10 +46,9 @@ export const useFormStoreState = <T extends Record<string, unknown>>(
     // so hydration matches without warnings.
     const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
-    // setFormValues, clearFormValues, destroy and unsubscribeFromStore are
-    // stable arrow properties on the store too, so they are returned as-is
-    // instead of wrapped in new arrow functions on every render.
-    return {
+    // Action methods on FormStore are stable arrow properties, so they are
+    // returned as-is instead of wrapped on every render.
+    const state = {
         formValues: snapshot.formValues,
         errors: snapshot.errors,
         isValid: snapshot.isValid,
@@ -47,4 +57,16 @@ export const useFormStoreState = <T extends Record<string, unknown>>(
         destroy: store.destroy,
         unsubscribeFromStore: store.unsubscribeFromStore,
     };
-};
+
+    const touchedStore = store as IFormStore<T> & Partial<ITouchedFormStore<T>>;
+    if (typeof touchedStore.markFieldTouched === "function" && "displayErrors" in snapshot) {
+        const touchedState = {
+            ...state,
+            displayErrors: snapshot.displayErrors,
+            markFieldTouched: touchedStore.markFieldTouched,
+        };
+        return touchedState;
+    }
+
+    return state;
+}

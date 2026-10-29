@@ -1,6 +1,6 @@
 # full-form-control [![npm version](https://img.shields.io/npm/v/full-form-control)](https://www.npmjs.com/package/full-form-control) [![Downloads](https://img.shields.io/npm/dt/full-form-control)](https://www.npmjs.com/package/full-form-control) [![License: MIT](https://img.shields.io/github/license/VolcharaMastering/full-form-control)](https://github.com/VolcharaMastering/full-form-control/blob/main/LICENSE)
 
-`full-form-control` is a lightweight, headless form state manager for React and Next.js. You create one small store per form, bind inputs to it, and get `formValues`, `errors` and a single `isValid` flag out of the box. Validation is pluggable: Joi, Zod, Yup, a custom validator, or a map of per-field validators.
+`full-form-control` is a lightweight, headless form state manager for React and Next.js. You create one small store per form, bind inputs to it, and get `formValues`, `errors`, `displayErrors` and a single `isValid` flag out of the box. Validation is pluggable: Joi, Zod, Yup, a custom validator, or a map of per-field validators.
 
 Written in TypeScript. Works on React 18+. You can use **plain JavaScript** without TypeScript.
 
@@ -29,23 +29,35 @@ import { useForm } from "full-form-control";
 
 type SignupForm = { username: string; email: string };
 
+const validation = {
+    type: "custom" as const,
+    schema: {
+        validate(values: SignupForm) {
+            const errors: Record<string, { message: string }> = {};
+            if (values.username.length < 3) errors.username = { message: "Enter 3 characters" };
+            if (!values.email.includes("@")) errors.email = { message: "Enter a valid email" };
+            return errors;
+        },
+    },
+};
+
 export const SignupForm = () => {
-    const { formValues, errors, isValid, setFormValues } = useForm<SignupForm>({
+    const { formValues, displayErrors, isValid, setFormValues, markFieldTouched } = useForm<SignupForm>({
         username: "",
         email: "",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormValues({ [name]: value });
+        setFormValues({ [name]: value }, validation);
     };
 
     return (
-        <form onSubmit={(e) => { e.preventDefault(); /* submit */ }}>
-            <input name="username" value={formValues.username ?? ""} onChange={handleChange} />
-            {errors.username && <span>{errors.username}</span>}
-            <input name="email" value={formValues.email ?? ""} onChange={handleChange} />
-            {errors.email && <span>{errors.email}</span>}
+        <form onSubmit={(event) => event.preventDefault()}>
+            <input name="username" value={formValues.username ?? ""} onChange={handleChange} onBlur={() => markFieldTouched("username", validation)} />
+            {displayErrors.username && <span>{displayErrors.username}</span>}
+            <input name="email" value={formValues.email ?? ""} onChange={handleChange} onBlur={() => markFieldTouched("email", validation)} />
+            {displayErrors.email && <span>{displayErrors.email}</span>}
             <button type="submit" disabled={!isValid}>Sign up</button>
         </form>
     );
@@ -74,7 +86,7 @@ import { useFormStore } from "full-form-control";
 import { signupStore } from "../forms/signupStore";
 
 export const SignupForm = () => {
-    const { formValues, errors, isValid, setFormValues } = useFormStore(signupStore);
+    const { formValues, displayErrors, isValid, setFormValues, markFieldTouched } = useFormStore(signupStore);
     // ... same as above
 };
 ```
@@ -86,6 +98,7 @@ export const SignupForm = () => {
 - **Two usage styles:** `useForm()` for a single form, or `createFormStore()` + `useFormStore()` for multiple forms
 - **Direct subscription with `useSyncExternalStore`:** One subscription per component, one re-render per change
 - **Pluggable validation:** Joi, Zod, Yup, custom schema, or per-field validators
+- **Touched field errors:** Show `displayErrors` in the UI and keep all validation errors in `errors`
 - **No dependencies:** Only React 18+ as a peer
 - **Fully typed API:** TypeScript support throughout
 
@@ -180,6 +193,12 @@ setFormValues({ email: "foo" }, { type: "custom", schema: customSchema });
 
 </details>
 
+### Showing errors after a field is touched
+
+`errors` keeps every error returned by the validation schema. Use `displayErrors` for messages in the form UI: it contains only errors for fields passed to `markFieldTouched(fieldPath, config?)`. Call that action on `blur`, using the same field path used in `errors` (for example, `"email"` or `"addresses.0.city"`). Pass `config` to validate even if the user left an empty field without typing. If omitted, the last successful validation config is reused; if there is none, touching the field does not run validation. Before a field is touched, its error stays in `errors` but is absent from `displayErrors`. `isValid` still uses all errors.
+
+`clearFormValues()` resets touched fields and both error objects. A submit attempt does not automatically mark fields as touched; this package does not provide a submit handler yet.
+
 ---
 
 ## Modes: "add" and "edit"
@@ -225,7 +244,7 @@ The package is SSR-safe but **not guaranteed for all edge cases** — tests are 
 ## API Reference
 
 ### `useForm<T>(initialValues?)`
-Returns `{ formValues, errors, isValid, setFormValues, clearFormValues, destroy }`.
+Returns `{ formValues, errors, displayErrors, isValid, setFormValues, markFieldTouched, clearFormValues, destroy }`.
 
 ### `createFormStore<T>(initialValues?)`
 Creates a store. Pass it to `useFormStore` in any component that reads or writes it.
@@ -236,9 +255,11 @@ Subscribes to a store and returns the current state plus action methods.
 | Method / Field | Type | Description |
 |---|---|---|
 | `formValues` | `T` | Current form state |
-| `errors` | `Record<string, string>` | Field path → error message |
+| `errors` | `Record<string, string>` | All validation errors, including untouched fields |
+| `displayErrors` | `Record<string, string>` | Errors for fields marked touched |
 | `isValid` | `boolean` | `false` initially, then `true` when valid |
 | `setFormValues(partial, config?, mode?)` | Method | Merge values and validate |
+| `markFieldTouched(fieldPath, config?)` | Method | Mark one field touched and validate if a config is available |
 | `clearFormValues()` | Method | Reset to initial state |
 | `destroy()` | Method | Clean up store (usually not needed for `useForm`) |
 
@@ -254,7 +275,7 @@ React hook for a single standalone form. Creates a `FormStore<T>` internally on 
 Creates a new `FormStore<T>`. Call once per form, at module level or inside a parent with `useRef`, then share the instance across every component that needs to read or write that form via `useFormStore`.
 
 #### `useFormStore<T>(store)`
-React hook. Subscribes to a `FormStore<T>` with a single `useSyncExternalStore` call and returns the current snapshot plus action methods.
+React hook. Subscribes to a `FormStore<T>` with a single `useSyncExternalStore` call and returns the current snapshot plus action methods. Stores created by `createFormStore` also expose `displayErrors` and `markFieldTouched`. Existing custom `IFormStore<T>` implementations can still use the hook with the earlier API.
 
 #### `useFormStoreState<T>(store)`
 The hook `useForm` and `useFormStore` both call internally. Exported directly for writing your own wrapper hook without duplicating the `useSyncExternalStore` setup. Accepts anything implementing `IFormStore<T>`.
@@ -266,9 +287,11 @@ Public so you can read or write the form outside React (API handlers, utilities,
 - `getFormValues(): T`
 - `getDefaultData(): T`
 - `getErrors(): Record<string, string>`
+- `getDisplayErrors(): Record<string, string>`
 - `isFormValid(): boolean`
-- `getSnapshot(): FormSnapshot<T>`
+- `getSnapshot(): FormDisplaySnapshot<T>`
 - `setFormValues(partial, config?, process?)` — throws after `destroy()`
+- `markFieldTouched(fieldPath, config?)` — throws after `destroy()`
 - `clearFormValues()` — throws after `destroy()`
 - `destroy()` — safe to call more than once
 - `subscribe(callback): () => void` — safe no-op after `destroy()`
@@ -291,11 +314,20 @@ type FormSnapshot<T> = {
     isValid: boolean;
 };
 
-type FormStoreState<T> = FormSnapshot<T> & {
-    setFormValues: FormStore<T>["setFormValues"];
-    clearFormValues: () => void;
-    destroy: () => void;
-    unsubscribeFromStore: () => void; // deprecated
+type FormDisplaySnapshot<T> = FormSnapshot<T> & {
+    displayErrors: Record<string, string>;
+};
+
+type FormStoreState<T extends Record<string, unknown>> = FormSnapshot<T> & {
+    setFormValues: IFormStore<T>["setFormValues"];
+    clearFormValues: IFormStore<T>["clearFormValues"];
+    destroy: IFormStore<T>["destroy"];
+    unsubscribeFromStore: IFormStore<T>["unsubscribeFromStore"];
+};
+
+type TouchedFormStoreState<T extends Record<string, unknown>> = FormStoreState<T> & {
+    displayErrors: Record<string, string>;
+    markFieldTouched: (fieldPath: string, config?: ValidationConfig<T>) => void;
 };
 
 type FieldValidator<Value> = (value: Value) => string | null;
@@ -332,21 +364,21 @@ interface SignupForm { username: string; email: string }
 
 This is a TypeScript limitation: interfaces have no implicit index signature. If you get an error like `Type 'X' does not satisfy the constraint 'Record<string, unknown>'`, use a `type` alias instead.
 
-### 2. Exceptions in validation schemas can leave `isValid: true`
+### 2. Exceptions in validation schemas are rethrown
 
-If your validation schema throws an unexpected error, the form may appear valid despite the crash:
+If a validation schema throws an unexpected error, `setFormValues` rethrows it. The store keeps the merged values, sets `isValid` to `false`, and notifies subscribers. A newly supplied failing schema does not replace the last successful validation config.
 
 ```ts
-// ❌ DANGEROUS - if schema.validate() throws, isValid becomes true
 const schema = {
     validate(data) {
-        throw new Error("oops!");  // Form shows isValid: true!
+        throw new Error("schema bug");
     }
 };
+// This throws, and isValid becomes false.
 setFormValues({ email: "test" }, { type: "custom", schema });
 ```
 
-**Solution:** Wrap schema logic in try-catch or ensure your schema never throws uncaught errors.
+Fix the schema error or catch it where you call `setFormValues`.
 
 ### 3. Form-level validation errors are not displayed
 

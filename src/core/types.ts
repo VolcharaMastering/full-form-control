@@ -73,6 +73,10 @@ export type FormSnapshot<T> = {
     isValid: boolean;
 };
 
+export type FormDisplaySnapshot<T> = FormSnapshot<T> & {
+    displayErrors: Record<string, string>;
+};
+
 // Public interface implemented by FormStore. useFormStore and useForm accept
 // anything shaped like this, not just instances returned by createFormStore.
 //
@@ -107,4 +111,11 @@ export interface IFormStore<T> {
 
     subscribe(callback: () => void): () => void;
     getSubscribersCount(): number;
+}
+
+export interface ITouchedFormStore<T> extends IFormStore<T> {
+    displayErrors: Record<string, string>;
+    markFieldTouched(fieldPath: string, validationConfig?: ValidationConfig<T>): void;
+    getDisplayErrors(): Record<string, string>;
+    getSnapshot(): FormDisplaySnapshot<T>;
 }

@@ -1,7 +1,11 @@
 "use client";
 
-import type { IFormStore } from "../core/types.js";
-import { useFormStoreState, type FormStoreState } from "./useFormStoreState.js";
+import type { IFormStore, ITouchedFormStore } from "../core/types.js";
+import {
+    useFormStoreState,
+    type FormStoreState,
+    type TouchedFormStoreState,
+} from "./useFormStoreState.js";
 
 // Hook for multiple forms on one page.
 // The store must be created once per form via createFormStore, then passed
@@ -9,6 +13,14 @@ import { useFormStoreState, type FormStoreState } from "./useFormStoreState.js";
 // Several components can share the same form by calling useFormStore with
 // the same store instance. Accepts anything implementing IFormStore<T>, not
 // just instances returned by createFormStore.
-export const useFormStore = <T extends Record<string, unknown>>(
+export function useFormStore<T extends Record<string, unknown>>(
+    store: ITouchedFormStore<T>
+): TouchedFormStoreState<T>;
+export function useFormStore<T extends Record<string, unknown>>(
     store: IFormStore<T>
-): FormStoreState<T> => useFormStoreState(store);
+): FormStoreState<T>;
+export function useFormStore<T extends Record<string, unknown>>(
+    store: IFormStore<T>
+): FormStoreState<T> {
+    return useFormStoreState(store);
+}
