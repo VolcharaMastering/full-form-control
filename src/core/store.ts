@@ -1,3 +1,4 @@
+import { assertFormValues } from "#src/core/formValues.js";
 import type {
     CustomSchema,
     FieldValidationSchema,
@@ -13,8 +14,7 @@ import type {
     YupValidationError,
     ZodSchema,
     ZodValidationError,
-} from "./types.js";
-import { assertFormValues } from "./formValues.js";
+} from "#src/core/types.js";
 
 // See DESIGN_NOTES.md for the reasoning behind the non-obvious decisions
 // in this file. Comments below just describe what the code does.

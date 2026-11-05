@@ -3,14 +3,14 @@ import { describe, expect, it } from "@jest/globals";
 import {
     createFormStore,
     FormStore,
-    useForm,
-    useFormStore,
-    useFormStoreState,
     type FormStoreState,
     type IFormStore,
     type TouchedFormStoreState,
+    useForm,
+    useFormStore,
+    useFormStoreState,
     type ValidationConfig,
-} from "../../src/index.js";
+} from "#src/index.js";
 
 interface SignupForm {
     email: string;

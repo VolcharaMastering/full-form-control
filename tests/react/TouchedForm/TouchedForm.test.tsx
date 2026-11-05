@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
-import { createFormStore, useForm, useFormStore, type FormStore } from "../../../src/index.js";
+import { createFormStore, type FormStore,useForm, useFormStore } from "#src/index.js";
 
 type FormValues = { username: string; email: string };
 

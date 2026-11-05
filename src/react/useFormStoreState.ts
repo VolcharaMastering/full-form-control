@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import type { FormSnapshot, IFormStore, ITouchedFormStore } from "../core/types.js";
+import type { FormSnapshot, IFormStore, ITouchedFormStore } from "#src/core/types.js";
 
 // Snapshot plus stable action methods returned to components.
 // Shared return shape for useFormStore (multi-form) and useForm (standalone).

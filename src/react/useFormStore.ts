@@ -1,11 +1,11 @@
 "use client";
 
-import type { IFormStore, ITouchedFormStore } from "../core/types.js";
+import type { IFormStore, ITouchedFormStore } from "#src/core/types.js";
 import {
-    useFormStoreState,
     type FormStoreState,
     type TouchedFormStoreState,
-} from "./useFormStoreState.js";
+    useFormStoreState,
+} from "#src/react/useFormStoreState.js";
 
 // Hook for multiple forms on one page.
 // The store must be created once per form via createFormStore, then passed

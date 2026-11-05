@@ -2,9 +2,9 @@
 
 import { useRef } from "react";
 
-import { createFormStore, type FormStore } from "../core/store.js";
-import type { FormInitialValues } from "../core/types.js";
-import { useFormStoreState, type TouchedFormStoreState } from "./useFormStoreState.js";
+import { createFormStore, type FormStore } from "#src/core/store.js";
+import type { FormInitialValues } from "#src/core/types.js";
+import { type TouchedFormStoreState,useFormStoreState } from "#src/react/useFormStoreState.js";
 
 // Hook for a single standalone form.
 // Creates and owns its own FormStore internally, so there is no separate

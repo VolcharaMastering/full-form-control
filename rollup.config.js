@@ -1,3 +1,5 @@
+import path from "node:path";
+
 export default {
   input: {
     index: "dist/index.js",
@@ -7,6 +9,13 @@ export default {
   },
   external: (id) => id === "react" || id.startsWith("react/"),
   preserveEntrySignatures: "strict",
+  plugins: [{
+    name: "resolve-src-alias",
+    resolveId(id) {
+      if (id.startsWith("#src/")) return path.resolve("dist", id.slice(5));
+      return null;
+    },
+  }],
   onwarn: (warning, warn) => {
     if (warning.code === "MODULE_LEVEL_DIRECTIVE" && warning.message.includes("use client")) return;
     warn(warning);

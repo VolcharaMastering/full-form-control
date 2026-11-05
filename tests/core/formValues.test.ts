@@ -1,7 +1,8 @@
-import { describe, expect, it, jest } from "@jest/globals";
 import { runInNewContext } from "node:vm";
 
-import { createFormStore, FormStore } from "../../src/index.js";
+import { describe, expect, it, jest } from "@jest/globals";
+
+import { createFormStore, FormStore } from "#src/index.js";
 
 class FormModel {
     email = "";

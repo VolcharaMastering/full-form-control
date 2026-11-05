@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { URL } from "node:url";
 
 const readOutput = (path) => readFile(new URL(`./dist/bundle/${path}`, import.meta.url), "utf8");
