@@ -188,7 +188,7 @@ setFormValues({ email: "foo" }, { type: "custom", schema: customSchema });
 
 - The store remembers the last validation config and reuses it on later `setFormValues()` calls that omit the argument
 - Only `type: "field"` validates a subset of fields; other types re-validate the entire form
-- To stop validating without clearing data, you can pass `clearFormValues()` or switch to a permissive schema
+- To reset values and validation, call `clearFormValues()`. To keep the values and clear errors, switch to a permissive schema that reports no errors
 - Use helpers: `zod(schema)`, `joi(schema)`, `yup(schema)`, `custom(schema)`, `field(schema)` for better editor support in JavaScript
 
 </details>
@@ -210,7 +210,7 @@ The third argument of `setFormValues` is `"add" | "edit"` and defaults to `"add"
 
 **`"add"` mode (default):**
 - Merges new values into current form state
-- `isValid` becomes `true` when there are no errors and at least one field has a value
+- `isValid` becomes `true` when there are no errors and the form has at least one field key (even if its value is empty)
 
 **`"edit"` mode:**
 - On the first `"edit"` call, the current values become the baseline for comparison (`defaultData`)
@@ -232,12 +232,11 @@ setFormValues(user, undefined, "edit");
 
 ## Next.js and SSR
 
-The package is SSR-safe but **not guaranteed for all edge cases** — tests are in progress.
+The hooks use `useSyncExternalStore` for SSR. The published ESM build keeps the store modules separate from React hook modules, which carry the `"use client"` directive. SSR behavior has tests, but not every edge case is guaranteed.
 
 - `useForm` stores its state in a `useRef`, so it never leaks state between requests
 - `createFormStore` at module level works for client-side code; never create it at module level in Server Components or API routes
 - Components calling `useForm` or `useFormStore` must be client components (`"use client"`)
-- See [SSR details](./DESIGN_NOTES.md) for more information
 
 ---
 
@@ -281,7 +280,7 @@ React hook. Subscribes to a `FormStore<T>` with a single `useSyncExternalStore` 
 The hook `useForm` and `useFormStore` both call internally. Exported directly for writing your own wrapper hook without duplicating the `useSyncExternalStore` setup. Accepts anything implementing `IFormStore<T>`.
 
 #### `FormStore<T>` (low-level class)
-Public so you can read or write the form outside React (API handlers, utilities, tests). Exposes `formValues`, `defaultData`, `errors` and `isValid` as **read-only** public properties. Always go through `setFormValues` / `clearFormValues` to change state.
+Public so you can read or write the form outside React (API handlers, utilities, tests). Exposes `formValues`, `defaultData`, `errors`, `displayErrors` and `isValid` as public properties. Use store methods to change state so snapshots and subscribers stay in sync.
 
 **Public methods:**
 - `getFormValues(): T`
@@ -386,7 +385,7 @@ setFormValues({ email: "test" }, { type: "custom", schema });
 
 Fix the schema error or catch it where you call `setFormValues`.
 
-### 3. Form-level validation errors are not displayed
+### 3. Form-level validation errors need a field key
 
 Errors that apply to the entire form (not a single field) cannot be displayed using the standard `errors.fieldName` pattern:
 
@@ -406,7 +405,7 @@ const schema = {
 
 ```ts
 return { _form: { message: "Passwords don't match" } };
-// Access in JSX: {errors._form && <span>{errors._form}</span>}
+// Mark `_form` as touched and render `displayErrors._form` in the UI.
 ```
 
 ---
