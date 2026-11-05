@@ -13,14 +13,10 @@ import {
 // Several components can share the same form by calling useFormStore with
 // the same store instance. Accepts anything implementing IFormStore<T>, not
 // just instances returned by createFormStore.
-export function useFormStore<T extends Record<string, unknown>>(
+export function useFormStore<T extends object>(
     store: ITouchedFormStore<T>
 ): TouchedFormStoreState<T>;
-export function useFormStore<T extends Record<string, unknown>>(
-    store: IFormStore<T>
-): FormStoreState<T>;
-export function useFormStore<T extends Record<string, unknown>>(
-    store: IFormStore<T>
-): FormStoreState<T> {
+export function useFormStore<T extends object>(store: IFormStore<T>): FormStoreState<T>;
+export function useFormStore<T extends object>(store: IFormStore<T>): FormStoreState<T> {
     return useFormStoreState(store);
 }

@@ -6,7 +6,7 @@ import type { FormSnapshot, IFormStore, ITouchedFormStore } from "../core/types.
 
 // Snapshot plus stable action methods returned to components.
 // Shared return shape for useFormStore (multi-form) and useForm (standalone).
-export type FormStoreState<T extends Record<string, unknown>> = FormSnapshot<T> & {
+export type FormStoreState<T extends object> = FormSnapshot<T> & {
     setFormValues: IFormStore<T>["setFormValues"];
     clearFormValues: IFormStore<T>["clearFormValues"];
     destroy: IFormStore<T>["destroy"];
@@ -14,7 +14,7 @@ export type FormStoreState<T extends Record<string, unknown>> = FormSnapshot<T> 
     unsubscribeFromStore: IFormStore<T>["unsubscribeFromStore"];
 };
 
-export type TouchedFormStoreState<T extends Record<string, unknown>> = FormStoreState<T> & {
+export type TouchedFormStoreState<T extends object> = FormStoreState<T> & {
     displayErrors: Record<string, string>;
     markFieldTouched: ITouchedFormStore<T>["markFieldTouched"];
 };
@@ -24,15 +24,11 @@ export type TouchedFormStoreState<T extends Record<string, unknown>> = FormStore
 // works here too, as long as it satisfies the interface.
 // Both public hooks call this internally, so the useSyncExternalStore setup
 // and the returned action methods stay identical between them.
-export function useFormStoreState<T extends Record<string, unknown>>(
+export function useFormStoreState<T extends object>(
     store: ITouchedFormStore<T>
 ): TouchedFormStoreState<T>;
-export function useFormStoreState<T extends Record<string, unknown>>(
-    store: IFormStore<T>
-): FormStoreState<T>;
-export function useFormStoreState<T extends Record<string, unknown>>(
-    store: IFormStore<T>
-): FormStoreState<T> {
+export function useFormStoreState<T extends object>(store: IFormStore<T>): FormStoreState<T>;
+export function useFormStoreState<T extends object>(store: IFormStore<T>): FormStoreState<T> {
     // One subscription to a single form snapshot.
     // The store caches this object and replaces it on every state change,
     // so notify() triggers at most one re-render per component.

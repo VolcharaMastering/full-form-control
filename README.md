@@ -318,14 +318,14 @@ type FormDisplaySnapshot<T> = FormSnapshot<T> & {
     displayErrors: Record<string, string>;
 };
 
-type FormStoreState<T extends Record<string, unknown>> = FormSnapshot<T> & {
+type FormStoreState<T extends object> = FormSnapshot<T> & {
     setFormValues: IFormStore<T>["setFormValues"];
     clearFormValues: IFormStore<T>["clearFormValues"];
     destroy: IFormStore<T>["destroy"];
     unsubscribeFromStore: IFormStore<T>["unsubscribeFromStore"];
 };
 
-type TouchedFormStoreState<T extends Record<string, unknown>> = FormStoreState<T> & {
+type TouchedFormStoreState<T extends object> = FormStoreState<T> & {
     displayErrors: Record<string, string>;
     markFieldTouched: (fieldPath: string, config?: ValidationConfig<T>) => void;
 };
@@ -350,19 +350,25 @@ All types are exported from the package root.
 
 ## ⚠️ Important Warnings
 
-### 1. Use `type`, not `interface` (TypeScript)
+### 1. Form model types (TypeScript)
 
-Form types **must be declared with `type`, not `interface`**:
+Form models can be declared with either `type` or `interface`. Field values and validators keep their declared types:
 
 ```ts
-// ✅ GOOD
 type SignupForm = { username: string; email: string };
 
-// ❌ BAD - causes TypeScript error
-interface SignupForm { username: string; email: string }
+interface ProfileForm { username: string; email: string }
 ```
 
-This is a TypeScript limitation: interfaces have no implicit index signature. If you get an error like `Type 'X' does not satisfy the constraint 'Record<string, unknown>'`, use a `type` alias instead.
+The public store and hook APIs use `T extends object`; no string index signature is required.
+
+The form root must be a plain object, such as `{ email: "" }`. Objects created with `Object.create(null)` are also accepted. Arrays, functions, dates, files, collections, and class instances must be stored inside named fields rather than used as the root. For example, `{ attachments: File[], birthday: Date }` is a valid form model.
+
+TypeScript rejects known unsupported root models when creating a store or calling `useForm`, including arrays, functions, dates, maps, sets, promises, regular expressions, errors, and typed arrays. It cannot reliably distinguish a class instance from an interface with the same fields. Broad types such as `object`, assertions, and JavaScript calls also need runtime checks.
+
+`FormStore` checks `initialValues` and each `setFormValues` update at runtime. An invalid root throws a `TypeError` before values, validation, or subscriptions are changed. Omitted or `undefined` initial values are allowed; an update must always be a plain object. Nested values keep their references; this check does not deep-clone them.
+
+Generic wrappers can forward `...args: FormInitialValues<T>` to `createFormStore<T>(...args)` or `useForm<T>(...args)` to preserve these checks.
 
 ### 2. Exceptions in validation schemas are rethrown
 

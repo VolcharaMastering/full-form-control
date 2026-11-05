@@ -2,6 +2,7 @@ import type {
     CustomSchema,
     FieldValidationSchema,
     FormDisplaySnapshot,
+    FormInitialValues,
     GenericValidationResult,
     ITouchedFormStore,
     JoiSchema,
@@ -13,6 +14,7 @@ import type {
     ZodSchema,
     ZodValidationError,
 } from "./types.js";
+import { assertFormValues } from "./formValues.js";
 
 // See DESIGN_NOTES.md for the reasoning behind the non-obvious decisions
 // in this file. Comments below just describe what the code does.
@@ -34,7 +36,7 @@ const isYupValidationError = (err: unknown): err is YupValidationError => {
     );
 };
 
-export class FormStore<T extends Record<string, unknown>> implements ITouchedFormStore<T> {
+export class FormStore<T extends object> implements ITouchedFormStore<T> {
     public formValues: T;
     public defaultData: T;
     public errors: Record<string, string> = {};
@@ -56,8 +58,9 @@ export class FormStore<T extends Record<string, unknown>> implements ITouchedFor
     // restores this instead of wiping to {}.
     private readonly initialValues: T;
 
-    constructor(initialValues?: T) {
-        this.initialValues = initialValues ? { ...initialValues } : ({} as T);
+    constructor(...[initialValues]: FormInitialValues<T>) {
+        if (initialValues !== undefined) assertFormValues(initialValues, "initialValues");
+        this.initialValues = initialValues !== undefined ? { ...initialValues } : ({} as T);
         this.formValues = { ...this.initialValues };
         this.defaultData = { ...this.initialValues };
         // isValid starts false regardless of initialValues; it becomes
@@ -169,6 +172,7 @@ export class FormStore<T extends Record<string, unknown>> implements ITouchedFor
         process: "add" | "edit" = "add"
     ): void => {
         this.assertNotDestroyed();
+        assertFormValues(data, "setFormValues data");
 
         if (process === "edit") {
             this.isEditMode = true;
@@ -414,6 +418,5 @@ export class FormStore<T extends Record<string, unknown>> implements ITouchedFor
 // Factory for per-form store instances.
 // Call once per form (module level or inside a parent with useRef).
 // Pass the returned store to useFormStore in any component that needs it.
-export const createFormStore = <T extends Record<string, unknown>>(
-    initialValues?: T
-): FormStore<T> => new FormStore<T>(initialValues);
+export const createFormStore = <T extends object>(...args: FormInitialValues<T>): FormStore<T> =>
+    new FormStore<T>(...args);

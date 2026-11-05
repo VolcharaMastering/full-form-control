@@ -1,6 +1,26 @@
 // Single source of truth for public types used by FormStore and the hook.
 // Imported explicitly where needed; no ambient declarations.
 
+type UnsupportedFormRoot =
+    | readonly unknown[]
+    | ((...args: never[]) => unknown)
+    | (abstract new (...args: never[]) => object)
+    | Date
+    | RegExp
+    | Error
+    | ReadonlyMap<unknown, unknown>
+    | ReadonlySet<unknown>
+    | WeakMap<object, unknown>
+    | WeakSet<object>
+    | PromiseLike<unknown>
+    | ArrayBuffer
+    | ArrayBufferView;
+
+// A required never argument rejects unsupported models even without initial values.
+export type FormInitialValues<T extends object> = [Extract<T, UnsupportedFormRoot>] extends [never]
+    ? [initialValues?: T]
+    : [initialValues: never];
+
 // Field-level validator. Returns an error message or null if the value is valid.
 export type FieldValidator<Value> = (value: Value) => string | null;
 
