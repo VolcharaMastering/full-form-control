@@ -1,6 +1,26 @@
 // Single source of truth for public types used by FormStore and the hook.
 // Imported explicitly where needed; no ambient declarations.
 
+type UnsupportedFormRoot =
+    | readonly unknown[]
+    | ((...args: never[]) => unknown)
+    | (abstract new (...args: never[]) => object)
+    | Date
+    | RegExp
+    | Error
+    | ReadonlyMap<unknown, unknown>
+    | ReadonlySet<unknown>
+    | WeakMap<object, unknown>
+    | WeakSet<object>
+    | PromiseLike<unknown>
+    | ArrayBuffer
+    | ArrayBufferView;
+
+// A required never argument rejects unsupported models even without initial values.
+export type FormInitialValues<T extends object> = [Extract<T, UnsupportedFormRoot>] extends [never]
+    ? [initialValues?: T]
+    : [initialValues: never];
+
 // Field-level validator. Returns an error message or null if the value is valid.
 export type FieldValidator<Value> = (value: Value) => string | null;
 
@@ -73,6 +93,10 @@ export type FormSnapshot<T> = {
     isValid: boolean;
 };
 
+export type FormDisplaySnapshot<T> = FormSnapshot<T> & {
+    displayErrors: Record<string, string>;
+};
+
 // Public interface implemented by FormStore. useFormStore and useForm accept
 // anything shaped like this, not just instances returned by createFormStore.
 //
@@ -107,4 +131,11 @@ export interface IFormStore<T> {
 
     subscribe(callback: () => void): () => void;
     getSubscribersCount(): number;
+}
+
+export interface ITouchedFormStore<T> extends IFormStore<T> {
+    displayErrors: Record<string, string>;
+    markFieldTouched(fieldPath: string, validationConfig?: ValidationConfig<T>): void;
+    getDisplayErrors(): Record<string, string>;
+    getSnapshot(): FormDisplaySnapshot<T>;
 }

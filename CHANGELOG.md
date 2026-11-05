@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-11-05
+
+### Added
+
+- Added a build check for React client directives, server-safe core exports, and the external React dependency.
+
+- Root value checks for form creation: TypeScript rejects known unsupported models, including arrays, functions, dates, and collections. `FormInitialValues<T>` supports generic wrappers. Arrays, dates, files, and class instances remain accepted inside fields.
+
+### Changed
+
+- Added Rollup to the build while preserving module boundaries for the server-safe core and React client hooks.
+- Build the package before `npm pack` and `npm publish` with `prepack`.
+
+- `FormStore` now throws `TypeError` for non-plain `initialValues` or `setFormValues` updates before changing state. Plain objects from other JavaScript contexts and objects with a null prototype are accepted. Previously unsupported roots could be silently flattened by object spread.
+
+### Fixed
+
+- Form models declared with `interface` are now accepted by the store, hooks, and state types. Generic constraints use `object` while preserving field and validator types.
+
+## [0.5.0] - 2026-10-28
+
+### Added
+
+- Added `displayErrors` for errors on fields marked touched with `markFieldTouched(fieldPath, config?)`. The action can validate an untouched empty field on blur. The existing `errors` object still contains all validation errors, and `isValid` still uses all of them.
+- Added `getDisplayErrors()` and touched-field data in snapshots from `FormStore`. `clearFormValues()` resets touched fields.
+- Added `ITouchedFormStore<T>` and `TouchedFormStoreState<T>`. Existing custom `IFormStore<T>` implementations remain supported without new required methods.
+
+### Fixed
+
+- A validation schema exception now sets `isValid` to `false`, updates the snapshot, notifies subscribers, and rethrows the original error.
+
+### Changed
+
+- The README's main form example uses `displayErrors` for field messages. Existing code reading `errors` keeps its earlier behavior.
+
 ## [0.4.1] - 2026-09-09
 
 ### Added

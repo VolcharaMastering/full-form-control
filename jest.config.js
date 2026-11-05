@@ -6,6 +6,7 @@ export default {
     // (required for Node ESM resolution), but the files on disk are ".ts".
     // Strip the extension here so Jest's resolver finds the real file.
     moduleNameMapper: {
+        "^#src/(.*)\\.js$": "<rootDir>/src/$1",
         "^(\\.{1,2}/.*)\\.js$": "$1",
     },
     transform: {

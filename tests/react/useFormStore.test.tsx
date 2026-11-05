@@ -5,10 +5,10 @@ import type { ChangeEvent } from "react";
 
 import {
     createFormStore,
-    useFormStore,
     type FormSnapshot,
     type IFormStore,
-} from "../../src/index.js";
+    useFormStore,
+} from "#src/index.js";
 
 type SignupForm = { username: string; email: string };
 

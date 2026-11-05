@@ -1,22 +1,28 @@
 {
     "name": "full-form-control",
-    "version": "0.4.1",
+    "version": "0.5.1",
     "description": "Headless form management for React & Next.js",
     "type": "module",
     "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "import": "./dist/bundle/index.js"
         }
+    },
+    "imports": {
+        "#src/*": "./dist/*"
     },
     "files": [
         "dist",
-        "src"
+        "src",
+        "CHANGELOG.md"
     ],
     "scripts": {
-        "build": "tsc",
-        "prepublishOnly": "npm run build",
+        "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+        "build": "npm run clean && tsc && rollup -c && node check-rsc-build.mjs",
+        "prepack": "npm run build",
+        "prepublishOnly": "npm run lint && npm run typecheck && npm test",
         "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.jscheck.json",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
@@ -60,11 +66,13 @@
         "@types/react-dom": "^18.3.7",
         "eslint": "^10.9.1",
         "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-simple-import-sort": "^14.0.0",
         "jest": "^30.4.2",
         "jest-environment-jsdom": "^30.4.1",
         "prettier": "^3.9.6",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "rollup": "^4.67.5",
         "ts-jest": "^29.4.12",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.68.0"

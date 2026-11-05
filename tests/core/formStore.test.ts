@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from "@jest/globals";
 
-import { createFormStore, FormStore } from "../../src/index.js";
+import { createFormStore, FormStore } from "#src/index.js";
 
 type SignupForm = { username: string; email: string };
 

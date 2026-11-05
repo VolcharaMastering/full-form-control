@@ -1,9 +1,11 @@
+import { assertFormValues } from "#src/core/formValues.js";
 import type {
     CustomSchema,
     FieldValidationSchema,
-    FormSnapshot,
+    FormDisplaySnapshot,
+    FormInitialValues,
     GenericValidationResult,
-    IFormStore,
+    ITouchedFormStore,
     JoiSchema,
     JoiValidationResult,
     ValidationConfig,
@@ -12,7 +14,7 @@ import type {
     YupValidationError,
     ZodSchema,
     ZodValidationError,
-} from "./types.js";
+} from "#src/core/types.js";
 
 // See DESIGN_NOTES.md for the reasoning behind the non-obvious decisions
 // in this file. Comments below just describe what the code does.
@@ -34,14 +36,16 @@ const isYupValidationError = (err: unknown): err is YupValidationError => {
     );
 };
 
-export class FormStore<T extends Record<string, unknown>> implements IFormStore<T> {
+export class FormStore<T extends object> implements ITouchedFormStore<T> {
     public formValues: T;
     public defaultData: T;
     public errors: Record<string, string> = {};
+    public displayErrors: Record<string, string> = {};
     public isValid: boolean = false;
 
     private subscribers: Set<() => void> = new Set();
-    private cachedSnapshot: FormSnapshot<T>;
+    private cachedSnapshot: FormDisplaySnapshot<T>;
+    private touchedFields: Set<string> = new Set();
     private isEditMode: boolean = false;
     // True once the first "edit" call captured defaultData as a baseline.
     private hasEditBaseline: boolean = false;
@@ -54,8 +58,9 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
     // restores this instead of wiping to {}.
     private readonly initialValues: T;
 
-    constructor(initialValues?: T) {
-        this.initialValues = initialValues ? { ...initialValues } : ({} as T);
+    constructor(...[initialValues]: FormInitialValues<T>) {
+        if (initialValues !== undefined) assertFormValues(initialValues, "initialValues");
+        this.initialValues = initialValues !== undefined ? { ...initialValues } : ({} as T);
         this.formValues = { ...this.initialValues };
         this.defaultData = { ...this.initialValues };
         // isValid starts false regardless of initialValues; it becomes
@@ -90,10 +95,11 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
     }
 
     // Build a fresh snapshot from the current store fields.
-    private buildSnapshot(): FormSnapshot<T> {
+    private buildSnapshot(): FormDisplaySnapshot<T> {
         return {
             formValues: this.formValues,
             errors: this.errors,
+            displayErrors: this.displayErrors,
             isValid: this.isValid,
         };
     }
@@ -101,9 +107,33 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
     // Replace the cached snapshot and then call all subscribers.
     // The new reference is what useSyncExternalStore reads on the next render.
     private notify() {
+        const displayErrors: Record<string, string> = {};
+        for (const fieldPath of this.touchedFields) {
+            const error = this.errors[fieldPath];
+            if (error !== undefined) displayErrors[fieldPath] = error;
+        }
+        this.displayErrors = displayErrors;
         this.cachedSnapshot = this.buildSnapshot();
         this.subscribers.forEach((cb) => cb());
     }
+
+    markFieldTouched = (fieldPath: string, validationConfig?: ValidationConfig<T>): void => {
+        this.assertNotDestroyed();
+        if (this.touchedFields.has(fieldPath)) return;
+        this.touchedFields.add(fieldPath);
+
+        const config = validationConfig ?? this.lastValidationConfig;
+        if (config) {
+            const changed =
+                config.type === "field"
+                    ? ({ [fieldPath]: this.formValues[fieldPath as keyof T] } as Partial<T>)
+                    : {};
+            this.setFormValues(changed, validationConfig);
+            return;
+        }
+
+        this.notify();
+    };
 
     // isValid is true only when there are no errors AND the form has some data.
     // An empty form is treated as "not ready to submit", which is safer for
@@ -142,6 +172,7 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
         process: "add" | "edit" = "add"
     ): void => {
         this.assertNotDestroyed();
+        assertFormValues(data, "setFormValues data");
 
         if (process === "edit") {
             this.isEditMode = true;
@@ -159,14 +190,17 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
         // Reuses the last config when this call omits one.
         const config = validationConfig ?? this.lastValidationConfig;
         if (config) {
-            // finally keeps isValid and notify running even if the schema throws.
             try {
                 this.runValidation(config, data);
                 this.lastValidationConfig = config;
-            } finally {
-                this.isValid = this.computeIsValid();
+            } catch (error) {
+                this.isValid = false;
                 this.notify();
+                throw error;
             }
+
+            this.isValid = this.computeIsValid();
+            this.notify();
             return;
         }
 
@@ -283,6 +317,8 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
         this.formValues = { ...base };
         this.defaultData = { ...base };
         this.errors = {};
+        this.displayErrors = {};
+        this.touchedFields.clear();
         this.isEditMode = false;
         this.hasEditBaseline = false;
         this.lastValidationConfig = undefined;
@@ -318,12 +354,16 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
         return this.errors;
     }
 
+    getDisplayErrors(): Record<string, string> {
+        return this.displayErrors;
+    }
+
     isFormValid(): boolean {
         return this.isValid;
     }
 
     // Cached snapshot for useSyncExternalStore; same reference until the next notify().
-    getSnapshot = (): FormSnapshot<T> => {
+    getSnapshot = (): FormDisplaySnapshot<T> => {
         return this.cachedSnapshot;
     };
 
@@ -378,6 +418,5 @@ export class FormStore<T extends Record<string, unknown>> implements IFormStore<
 // Factory for per-form store instances.
 // Call once per form (module level or inside a parent with useRef).
 // Pass the returned store to useFormStore in any component that needs it.
-export const createFormStore = <T extends Record<string, unknown>>(
-    initialValues?: T
-): FormStore<T> => new FormStore<T>(initialValues);
+export const createFormStore = <T extends object>(...args: FormInitialValues<T>): FormStore<T> =>
+    new FormStore<T>(...args);

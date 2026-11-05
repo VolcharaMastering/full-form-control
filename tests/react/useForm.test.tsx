@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ChangeEvent } from "react";
 
-import { useForm } from "../../src/index.js";
+import { useForm } from "#src/index.js";
 
 type SignupForm = { username: string; email: string };
 

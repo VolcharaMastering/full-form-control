@@ -1,7 +1,7 @@
 // @ts-check
 // Guards the README claim: a JavaScript file with // @ts-check flags a wrong
 // validation type the same way a TypeScript file does.
-import { createFormStore, zod } from "../../src/index.js";
+import { createFormStore, zod } from "#src/index.js";
 
 const schema = {
     safeParse: () => ({ success: /** @type {const} */ (true) }),

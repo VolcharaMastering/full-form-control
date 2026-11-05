@@ -5,7 +5,7 @@ import type {
     ValidationConfig,
     YupSchema,
     ZodSchema,
-} from "./types.js";
+} from "#src/core/types.js";
 
 // Named helpers so a typo is a missing-name error in JavaScript (ESLint
 // no-undef), not a free-form string like { type: "zodd" }.

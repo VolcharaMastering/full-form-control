@@ -1,4 +1,12 @@
-import { custom, field, joi, yup, zod, type ValidationConfig, type ValidationType } from "../../src/index.js";
+import {
+    custom,
+    field,
+    joi,
+    type ValidationConfig,
+    type ValidationType,
+    yup,
+    zod,
+} from "#src/index.js";
 
 type SignupForm = { email: string };
 
